@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unify Group Event</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700;800;900&family=IBM+Plex+Sans+Thai:wght@300;400;500;600&display=swap');
+
+  :root {
+    --green-dark: #0a3d1f;
+    --green-mid: #1a6b35;
+    --green-bright: #22c55e;
+    --green-light: #4ade80;
+    --gold: #f5c842;
+    --white: #f9fafb;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    background: var(--green-dark);
+    color: var(--white);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(34,197,94,0.12) 0%, transparent 40%),
+      radial-gradient(circle at 85% 70%, rgba(34,197,94,0.08) 0%, transparent 40%),
+      repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(34,197,94,0.03) 40px, rgba(34,197,94,0.03) 41px);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* HEADER */
+  header {
+    position: relative; z-index: 10; text-align: center;
+    padding: 40px 24px 28px;
+    background: linear-gradient(180deg, rgba(10,61,31,0.98) 0%, transparent 100%);
+    border-bottom: 1px solid rgba(34,197,94,0.2);
+  }
+  .logo-badge {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: linear-gradient(135deg, var(--green-mid), var(--green-dark));
+    border: 2px solid var(--green-bright); border-radius: 50px;
+    padding: 8px 24px; margin-bottom: 14px;
+    box-shadow: 0 0 24px rgba(34,197,94,0.3);
+  }
+  .logo-badge span {
+    font-family: 'Prompt', sans-serif; font-weight: 900; font-size: 15px;
+    letter-spacing: 3px; color: var(--green-bright); text-transform: uppercase;
+  }
+  .logo-dot { width:8px; height:8px; background:var(--green-bright); border-radius:50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.5;transform:scale(0.8);} }
+
+  .countdown-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(245,200,66,0.12); border: 1px solid rgba(245,200,66,0.45);
+    border-radius: 50px; padding: 8px 20px;
+  }
+  .countdown-badge span { font-family:'Prompt',sans-serif; font-size:13px; color:var(--gold); font-weight:700; letter-spacing:0.5px; }
+
+  /* PRIZE */
+  .prize-banner { position:relative; z-index:10; display:flex; justify-content:center; gap:12px; flex-wrap:wrap; padding:18px 24px 0; }
+  .prize-chip {
+    display:flex; align-items:center; gap:8px;
+    background:linear-gradient(135deg,rgba(245,200,66,0.15),rgba(245,200,66,0.05));
+    border:1px solid rgba(245,200,66,0.35); border-radius:50px; padding:10px 20px;
+  }
+  .prize-chip .text { font-family:'Prompt',sans-serif; font-size:14px; font-weight:700; color:var(--gold); }
+  .prize-chip .amount { font-family:'Prompt',sans-serif; font-size:18px; font-weight:900; color:var(--gold); }
+  .pat-note { position:relative; z-index:10; text-align:center; padding:8px 24px 0; font-size:13px; color:rgba(255,255,255,0.4); }
+  .pat-note strong { color:var(--green-bright); }
+
+  /* TABS */
+  .tabs-wrap { position:relative; z-index:10; display:flex; justify-content:center; padding:24px 24px 0; }
+  .tab-btn {
+    font-family:'Prompt',sans-serif; font-weight:600; font-size:15px;
+    padding:13px 32px; cursor:pointer; border:none; outline:none;
+    background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.5);
+    transition:all 0.3s; border-bottom:3px solid transparent; letter-spacing:0.5px;
+  }
+  .tab-btn:first-child { border-radius:12px 0 0 0; }
+  .tab-btn:last-child  { border-radius:0 12px 0 0; }
+  .tab-btn.active { background:rgba(34,197,94,0.12); color:var(--green-bright); border-bottom-color:var(--green-bright); }
+  .tab-btn:hover:not(.active) { background:rgba(34,197,94,0.06); color:rgba(255,255,255,0.8); }
+
+  /* PANELS */
+  .panel { position:relative; z-index:10; display:none; max-width:900px; margin:0 auto; padding:32px 20px 60px; animation:fadeUp 0.4s ease; }
+  .panel.active { display:block; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:translateY(0);} }
+
+  .section-title {
+    font-family:'Prompt',sans-serif; font-weight:700; font-size:20px;
+    color:var(--green-light); margin-bottom:6px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .section-title::before {
+    content:''; display:block; width:4px; height:22px;
+    background:var(--green-bright); border-radius:2px;
+    box-shadow:0 0 10px rgba(34,197,94,0.6);
+  }
+  .section-desc { font-size:13px; color:rgba(255,255,255,0.5); margin-bottom:22px; padding-left:14px; }
+
+  /* LOADING */
+  .loading-wrap { text-align:center; padding:40px; }
+  .spinner {
+    width:36px; height:36px; border:3px solid rgba(34,197,94,0.2);
+    border-top-color:var(--green-bright); border-radius:50%;
+    animation:spin 0.8s linear infinite; margin:0 auto 12px;
+  }
+  @keyframes spin { to{transform:rotate(360deg);} }
+  .loading-wrap p { font-family:'Prompt',sans-serif; font-size:14px; color:rgba(255,255,255,0.45); }
+
+  /* CONFIG BANNER */
+  .config-banner {
+    background:rgba(245,200,66,0.1); border:1px solid rgba(245,200,66,0.4);
+    border-radius:14px; padding:16px 20px; margin-bottom:24px;
+    font-family:'Prompt',sans-serif; font-size:13px; color:var(--gold); line-height:1.7;
+  }
+  .config-banner strong { font-size:14px; }
+  .config-banner input {
+    width:100%; margin-top:10px; background:rgba(0,0,0,0.3);
+    border:1px solid rgba(245,200,66,0.4); border-radius:8px;
+    padding:10px 14px; color:var(--white); font-family:'IBM Plex Sans Thai',sans-serif;
+    font-size:13px; outline:none;
+  }
+  .config-banner input:focus { border-color:var(--gold); }
+  .btn-save-config {
+    margin-top:10px; font-family:'Prompt',sans-serif; font-weight:700;
+    font-size:13px; padding:8px 20px; background:var(--gold); color:#1a1a00;
+    border:none; border-radius:50px; cursor:pointer; transition:all 0.2s;
+  }
+  .btn-save-config:hover { opacity:0.85; }
+
+  /* NAMING FORM */
+  .name-form-card {
+    background:linear-gradient(135deg,rgba(26,107,53,0.25),rgba(10,61,31,0.4));
+    border:1px solid rgba(34,197,94,0.25); border-radius:20px;
+    padding:26px 24px; margin-bottom:28px; backdrop-filter:blur(10px);
+  }
+  label { display:block; font-family:'Prompt',sans-serif; font-size:13px; font-weight:600; color:rgba(255,255,255,0.7); margin-bottom:7px; }
+  input[type="text"], textarea {
+    width:100%; background:rgba(255,255,255,0.06);
+    border:1px solid rgba(34,197,94,0.3); border-radius:12px;
+    padding:12px 16px; color:var(--white);
+    font-family:'IBM Plex Sans Thai',sans-serif; font-size:15px; outline:none;
+    transition:border-color 0.3s,box-shadow 0.3s; margin-bottom:16px;
+  }
+  input[type="text"]:focus, textarea:focus { border-color:var(--green-bright); box-shadow:0 0 0 3px rgba(34,197,94,0.15); }
+  textarea { resize:vertical; min-height:80px; }
+  input::placeholder, textarea::placeholder { color:rgba(255,255,255,0.25); }
+  .btn-primary {
+    font-family:'Prompt',sans-serif; font-weight:700; font-size:15px; letter-spacing:0.5px;
+    padding:12px 36px; background:linear-gradient(135deg,var(--green-bright),var(--green-mid));
+    color:var(--green-dark); border:none; border-radius:50px; cursor:pointer;
+    transition:all 0.3s; box-shadow:0 4px 20px rgba(34,197,94,0.35);
+  }
+  .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(34,197,94,0.5); }
+  .btn-primary:disabled { opacity:0.5; cursor:default; transform:none; }
+
+  /* SUBMISSIONS */
+  .submissions-list { display:flex; flex-direction:column; gap:10px; }
+  .submission-card {
+    display:flex; align-items:center; gap:14px;
+    background:rgba(255,255,255,0.04); border:1px solid rgba(34,197,94,0.15);
+    border-radius:14px; padding:14px 16px; transition:all 0.2s;
+  }
+  .submission-card:hover { background:rgba(34,197,94,0.06); border-color:rgba(34,197,94,0.3); }
+  .sub-rank { font-family:'Prompt',sans-serif; font-weight:900; font-size:22px; color:rgba(34,197,94,0.3); width:32px; text-align:center; flex-shrink:0; }
+  .sub-info { flex:1; }
+  .sub-name { font-family:'Prompt',sans-serif; font-weight:700; font-size:16px; color:var(--white); margin-bottom:2px; }
+  .sub-reason { font-size:12px; color:rgba(255,255,255,0.45); line-height:1.5; }
+  .sub-by { font-size:11px; color:var(--green-bright); margin-top:3px; font-weight:600; }
+  .vote-count-sm { font-family:'Prompt',sans-serif; font-weight:700; font-size:20px; color:var(--green-bright); text-align:center; min-width:44px; }
+  .vote-count-sm small { display:block; font-size:10px; font-weight:400; color:rgba(255,255,255,0.4); }
+  .btn-vote-sm {
+    font-family:'Prompt',sans-serif; font-weight:600; font-size:12px;
+    padding:7px 16px; background:rgba(34,197,94,0.12); color:var(--green-bright);
+    border:1px solid rgba(34,197,94,0.4); border-radius:50px; cursor:pointer;
+    transition:all 0.2s; white-space:nowrap;
+  }
+  .btn-vote-sm:hover { background:rgba(34,197,94,0.25); }
+  .btn-vote-sm.voted { background:var(--green-bright); color:var(--green-dark); border-color:var(--green-bright); cursor:default; }
+  .empty-state { text-align:center; padding:40px 20px; color:rgba(255,255,255,0.3); font-family:'Prompt',sans-serif; font-size:14px; }
+
+  /* SINGERS */
+  .singers-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; margin-bottom:28px; }
+  .singer-card {
+    background:linear-gradient(160deg,rgba(26,107,53,0.2),rgba(10,61,31,0.5));
+    border:1px solid rgba(34,197,94,0.2); border-radius:20px;
+    padding:22px 16px 18px; text-align:center; transition:all 0.3s; position:relative; overflow:hidden;
+  }
+  .singer-card::before { content:''; position:absolute; inset:0; background:radial-gradient(circle at 50% 0%,rgba(34,197,94,0.08),transparent 70%); opacity:0; transition:opacity 0.3s; }
+  .singer-card:hover::before { opacity:1; }
+  .singer-card:hover { border-color:rgba(34,197,94,0.5); transform:translateY(-4px); box-shadow:0 12px 36px rgba(34,197,94,0.14); }
+  .singer-avatar {
+    width:70px; height:70px; border-radius:50%; margin:0 auto 12px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Prompt',sans-serif; font-weight:900; font-size:18px;
+    color:var(--green-dark); position:relative;
+  }
+  .singer-avatar::after { content:''; position:absolute; inset:-3px; border-radius:50%; border:2px solid rgba(34,197,94,0.4); }
+  .singer-num {
+    position:absolute; top:-2px; right:-2px; width:22px; height:22px;
+    background:var(--green-dark); border:2px solid var(--green-bright); border-radius:50%;
+    font-family:'Prompt',sans-serif; font-weight:700; font-size:10px;
+    color:var(--green-bright); display:flex; align-items:center; justify-content:center;
+  }
+  .singer-name { font-family:'Prompt',sans-serif; font-weight:700; font-size:17px; color:var(--white); margin-bottom:12px; }
+  .vote-bar-wrap { background:rgba(255,255,255,0.07); border-radius:50px; height:5px; margin-bottom:8px; overflow:hidden; }
+  .vote-bar { height:100%; background:linear-gradient(90deg,var(--green-mid),var(--green-bright)); border-radius:50px; transition:width 0.6s ease; }
+  .vote-num { font-family:'Prompt',sans-serif; font-weight:700; font-size:18px; color:var(--green-bright); margin-bottom:12px; }
+  .vote-num small { font-size:11px; font-weight:400; color:rgba(255,255,255,0.4); }
+  .btn-vote {
+    font-family:'Prompt',sans-serif; font-weight:700; font-size:13px;
+    padding:9px 24px; background:transparent; color:var(--green-bright);
+    border:2px solid var(--green-bright); border-radius:50px; cursor:pointer;
+    transition:all 0.25s; width:100%;
+  }
+  .btn-vote:hover { background:rgba(34,197,94,0.15); }
+  .btn-vote.voted { background:var(--green-bright); color:var(--green-dark); cursor:default; }
+  .btn-vote:disabled { opacity:0.5; cursor:default; }
+
+  /* LEADERBOARD */
+  .leaderboard { background:rgba(255,255,255,0.03); border:1px solid rgba(34,197,94,0.15); border-radius:20px; padding:20px; }
+  .lb-title { font-family:'Prompt',sans-serif; font-weight:700; font-size:15px; color:var(--gold); margin-bottom:14px; }
+  .lb-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+  .lb-row:last-child { border-bottom:none; }
+  .lb-pos { font-family:'Prompt',sans-serif; font-weight:900; font-size:18px; width:30px; text-align:center; color:rgba(255,255,255,0.2); }
+  .lb-pos.top1{color:#ffd700;} .lb-pos.top2{color:#c0c0c0;} .lb-pos.top3{color:#cd7f32;}
+  .lb-name { flex:1; font-family:'Prompt',sans-serif; font-weight:600; font-size:15px; }
+  .lb-votes { font-family:'Prompt',sans-serif; font-weight:700; font-size:16px; color:var(--green-bright); }
+
+  /* TOAST */
+  .toast {
+    position:fixed; bottom:28px; left:50%;
+    transform:translateX(-50%) translateY(100px);
+    background:var(--green-mid); border:1px solid var(--green-bright); color:var(--white);
+    font-family:'Prompt',sans-serif; font-weight:600; font-size:14px;
+    padding:12px 28px; border-radius:50px; box-shadow:0 8px 28px rgba(0,0,0,0.4);
+    z-index:9999; transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+
+  @media(max-width:600px) {
+    .singers-grid { grid-template-columns:1fr 1fr; }
+    .tab-btn { font-size:13px; padding:11px 16px; }
+    .prize-banner { gap:8px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-badge">
+    <div class="logo-dot"></div>
+    <span>Unify Group</span>
+    <div class="logo-dot"></div>
+  </div>
+  <div class="countdown-badge">
+    <span>⏰</span>
+    <span id="countdown-display">กำลังโหลด...</span>
+  </div>
+</header>
+
+<div class="prize-banner">
+  <div class="prize-chip">
+    <span>🎤</span>
+    <span class="text">รางวัลร้องเพลง</span>
+    <span class="amount">฿500</span>
+  </div>
+  <div class="prize-chip">
+    <span>🎊</span>
+    <span class="text">เสนอชื่อ Party</span>
+    <span class="amount">฿500</span>
+  </div>
+</div>
+<p class="pat-note">📍 มารับของรางวัลได้ที่ <strong>คุณแพท</strong></p>
+
+<div class="tabs-wrap">
+  <button class="tab-btn active" onclick="switchTab('singing')">🎤 โหวตร้องเพลง</button>
+  <button class="tab-btn" onclick="switchTab('naming')">🎊 เสนอชื่อ Party</button>
+</div>
+
+<!-- PANEL: SINGING -->
+<div class="panel active" id="panel-singing">
+  <div class="section-title">ผู้เข้าแข่งขันประกวดร้องเพลง</div>
+  <p class="section-desc">โหวตให้ทีมที่คุณชื่นชอบ — แต่ละท่านโหวตได้ 1 ทีมเท่านั้น</p>
+  <div id="singersGrid" class="singers-grid"></div>
+  <div class="leaderboard">
+    <div class="lb-title">🏆 อันดับคะแนน (Live)</div>
+    <div id="leaderboard"></div>
+  </div>
+</div>
+
+<!-- PANEL: NAMING -->
+<div class="panel" id="panel-naming">
+  <div class="section-title">เสนอชื่อ Party</div>
+  <p class="section-desc">คิดชื่องาน Party สุดสร้างสรรค์ แล้วส่งมาได้เลย!</p>
+  <div class="name-form-card">
+    <label>ชื่องาน Party *</label>
+    <input type="text" id="inputName" placeholder="เช่น Unify Spark Night, Green Together...">
+    <label>เหตุผล / แนวคิด</label>
+    <textarea id="inputReason" placeholder="อธิบายแรงบันดาลใจหรือความหมายของชื่อนี้..."></textarea>
+    <label>ชื่อผู้ส่ง</label>
+    <input type="text" id="inputSender" placeholder="ชื่อ-นามสกุล หรือ nickname">
+    <button class="btn-primary" id="btnSubmit" onclick="submitName()">📨 ส่งชื่อ Party</button>
+  </div>
+  <div class="section-title">รายการที่ส่งมาแล้ว</div>
+  <p class="section-desc">โหวตให้ชื่อที่คุณชอบ — แต่ละท่านโหวตได้ 1 ชื่อเท่านั้น</p>
+  <div class="submissions-list" id="submissionsList"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// =========================================================
+// ⚙️ ตั้งค่า URL ของ Google Apps Script ตรงนี้เลย
+// =========================================================
+let SCRIPT_URL = localStorage.getItem('ug_script_url') || 'https://script.google.com/macros/s/AKfycbywhKtD7KZFh3sfQ1EqO7W6tKMF6jvI4wqeUAyqADC5oRjGz2NPa3mgcFG3i_9qs087yA/exec';
+
+const SINGERS = [
+  { id:1, name:'ทีม UAI',    color:'#22c55e', initials:'UAI' },
+  { id:2, name:'ทีม U1',     color:'#4ade80', initials:'U1'  },
+  { id:3, name:'ทีม UF',     color:'#86efac', initials:'UF'  },
+  { id:4, name:'ทีม U3',     color:'#34d399', initials:'U3'  },
+  { id:5, name:'ทีม U2',     color:'#6ee7b7', initials:'U2'  },
+  { id:6, name:'ทีม Aestora', color:'#a7f3d0', initials:'AES'  },
+  { id:7, name:'ทีม U49',    color:'#bbf7d0', initials:'U49' },
+];
+
+// state local (เพื่อรู้ว่าคนนี้โหวตอะไรไปแล้ว)
+let votedSinger = localStorage.getItem('ug_voted_singer') || null;
+let votedSub    = localStorage.getItem('ug_voted_sub')    || null;
+let singerData  = {};
+let partyData   = [];
+
+// ── API ───────────────────────────────────────────────────
+async function apiFetch(params) {
+  const url = SCRIPT_URL + '?' + new URLSearchParams(params);
+  const res = await fetch(url);
+  return res.json();
+}
+
+async function apiPost(body) {
+  const url = SCRIPT_URL + '?' + new URLSearchParams(body);
+  const res = await fetch(url);
+  return res.json();
+}
+
+// ── COUNTDOWN ─────────────────────────────────────────────
+function updateCountdown() {
+  const now = new Date();
+  const dl  = new Date(now);
+  dl.setDate(dl.getDate() + 1);
+  dl.setHours(12, 0, 0, 0);
+  const diff = dl - now;
+  if (diff <= 0) { document.getElementById('countdown-display').textContent = '⛔ สิ้นสุดการโหวตแล้ว'; return; }
+  const h = Math.floor(diff/3600000);
+  const m = Math.floor((diff%3600000)/60000);
+  const s = Math.floor((diff%60000)/1000);
+  document.getElementById('countdown-display').textContent =
+    `สิ้นสุดการโหวต: ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+setInterval(updateCountdown, 1000);
+updateCountdown();
+
+// ── TABS ──────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) =>
+    b.classList.toggle('active', (i===0&&tab==='singing')||(i===1&&tab==='naming')));
+  document.getElementById('panel-singing').classList.toggle('active', tab==='singing');
+  document.getElementById('panel-naming').classList.toggle('active', tab==='naming');
+}
+
+// ── TOAST ─────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── RENDER SINGERS ────────────────────────────────────────
+function renderSingers() {
+  const total = Object.values(singerData).reduce((a,b) => a + (b.votes||0), 0);
+  document.getElementById('singersGrid').innerHTML = SINGERS.map(s => {
+    const v = singerData[s.id]?.votes || 0;
+    const pct = total ? Math.round(v/total*100) : 0;
+    const isVoted = votedSinger == s.id;
+    return `
+      <div class="singer-card">
+        <div class="singer-avatar" style="background:${s.color}">
+          ${s.initials}<div class="singer-num">${s.id}</div>
+        </div>
+        <div class="singer-name">${s.name}</div>
+        <div class="vote-bar-wrap"><div class="vote-bar" style="width:${pct}%"></div></div>
+        <div class="vote-num">${v} <small>โหวต (${pct}%)</small></div>
+        <button class="btn-vote ${isVoted?'voted':''}" onclick="voteSinger(${s.id})">
+          ${isVoted ? '✓ โหวตแล้ว' : '🗳️ โหวตเลย'}
+        </button>
+      </div>`;
+  }).join('');
+  renderLeaderboard();
+}
+
+function renderLeaderboard() {
+  const sorted = SINGERS.map(s => ({...s, votes: singerData[s.id]?.votes||0})).sort((a,b)=>b.votes-a.votes);
+  const medals = ['🥇','🥈','🥉'], posClass = ['top1','top2','top3'];
+  document.getElementById('leaderboard').innerHTML = sorted.map((s,i) => `
+    <div class="lb-row">
+      <div class="lb-pos ${posClass[i]||''}">${medals[i]||(i+1)}</div>
+      <div class="lb-name">${s.name}</div>
+      <div class="lb-votes">${s.votes} คะแนน</div>
+    </div>`).join('');
+}
+
+async function voteSinger(id) {
+  if (votedSinger) { showToast('คุณโหวตไปแล้ว 1 ทีม'); return; }
+  votedSinger = String(id);
+  localStorage.setItem('ug_voted_singer', votedSinger);
+  if (singerData[id]) singerData[id].votes++;
+  renderSingers();
+  showToast('🎤 โหวตให้ทีมเรียบร้อย!');
+  // ส่งข้อมูลไป Google Sheets (fire and forget)
+  const img = new Image();
+  img.src = SCRIPT_URL + '?action=voteSinger&teamId=' + id;
+}
+
+// ── RENDER PARTY ──────────────────────────────────────────
+function renderSubmissions() {
+  const sorted = [...partyData].sort((a,b) => b.votes - a.votes);
+  const el = document.getElementById('submissionsList');
+  if (sorted.length === 0) {
+    el.innerHTML = '<div class="empty-state">🎊 ยังไม่มีชื่อที่เสนอ<br>เป็นคนแรกที่ส่งชื่อมาเลย!</div>';
+    return;
+  }
+  el.innerHTML = sorted.map((s,i) => `
+    <div class="submission-card">
+      <div class="sub-rank">${i+1}</div>
+      <div class="sub-info">
+        <div class="sub-name">${s.name}</div>
+        ${s.reason ? `<div class="sub-reason">${s.reason}</div>` : ''}
+        <div class="sub-by">โดย ${s.by}</div>
+      </div>
+      <div class="vote-count-sm">${s.votes}<small>โหวต</small></div>
+      <button class="btn-vote-sm ${votedSub==s.id?'voted':''}" onclick="voteParty(${s.id})">
+        ${votedSub==s.id ? '✓ โหวตแล้ว' : '👍 โหวต'}
+      </button>
+    </div>`).join('');
+}
+
+async function submitName() {
+  const name   = document.getElementById('inputName').value.trim();
+  const reason = document.getElementById('inputReason').value.trim();
+  const sender = document.getElementById('inputSender').value.trim();
+  if (!name) { showToast('⚠️ กรุณาใส่ชื่องาน Party'); return; }
+  // แสดงใน UI ทันที
+  const newId = Date.now();
+  partyData.push({ id: newId, name, reason, by: sender||'ไม่ระบุชื่อ', votes: 0 });
+  document.getElementById('inputName').value = '';
+  document.getElementById('inputReason').value = '';
+  document.getElementById('inputSender').value = '';
+  renderSubmissions();
+  showToast('✅ ส่งชื่อ Party เรียบร้อย!');
+  // ส่งไป Google Sheets
+  const img = new Image();
+  img.src = SCRIPT_URL + '?action=submitParty&name=' + encodeURIComponent(name) + '&reason=' + encodeURIComponent(reason) + '&by=' + encodeURIComponent(sender||'ไม่ระบุชื่อ');
+}
+
+async function voteParty(id) {
+  if (votedSub) { showToast('คุณโหวตไปแล้ว 1 ชื่อ'); return; }
+  votedSub = String(id);
+  localStorage.setItem('ug_voted_sub', votedSub);
+  const entry = partyData.find(p => String(p.id) === String(id));
+  if (entry) entry.votes++;
+  renderSubmissions();
+  showToast('❤️ โหวตเรียบร้อย!');
+  const img = new Image();
+  img.src = SCRIPT_URL + '?action=voteParty&id=' + id;
+}
+
+// ── LOAD DATA ─────────────────────────────────────────────
+async function loadSingerData() {
+  if (!SCRIPT_URL) { renderSingers(); return; }
+  try {
+    const res = await apiFetch({ action:'getSingerVotes' });
+    if (res.ok) { singerData = res.data; renderSingers(); }
+  } catch(e) { console.error(e); renderSingers(); }
+}
+
+async function loadPartyData() {
+  if (!SCRIPT_URL) { renderSubmissions(); return; }
+  try {
+    const res = await apiFetch({ action:'getPartyNames' });
+    if (res.ok) { partyData = res.data; renderSubmissions(); }
+  } catch(e) { console.error(e); renderSubmissions(); }
+}
+
+// ── SCRIPT URL CONFIG ─────────────────────────────────────
+function saveScriptUrl() {
+  const val = document.getElementById('scriptUrlInput').value.trim();
+  if (!val) return;
+  SCRIPT_URL = val;
+  localStorage.setItem('ug_script_url', val);
+  document.getElementById('configBanner').style.display = 'none';
+  showToast('✅ บันทึก URL เรียบร้อย!');
+  loadSingerData(); loadPartyData();
+}
+
+// ── POLLING (refresh ทุก 10 วิ) ───────────────────────────
+setInterval(() => { loadSingerData(); loadPartyData(); }, 10000);
+
+// ── INIT ──────────────────────────────────────────────────
+if (!SCRIPT_URL) {
+  // แสดง config banner ในทั้งสอง panel
+  const banner = `
+    <div class="config-banner" id="configBanner">
+      <strong>⚙️ ตั้งค่า Google Apps Script URL</strong><br>
+      Deploy Apps Script แล้ว วาง Web App URL ตรงนี้เลย<br>
+      <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/...../exec">
+      <button class="btn-save-config" onclick="saveScriptUrl()">บันทึก</button>
+    </div>`;
+  document.getElementById('panel-singing').insertAdjacentHTML('afterbegin', banner);
+  document.getElementById('panel-naming').insertAdjacentHTML('afterbegin', banner.replace('id="configBanner"','id="configBanner2"').replace('id="scriptUrlInput"','id="scriptUrlInput2"').replace('saveScriptUrl()','saveScriptUrl2()'));
+}
+
+function saveScriptUrl2() {
+  const val = document.getElementById('scriptUrlInput2').value.trim();
+  if (!val) return;
+  document.getElementById('scriptUrlInput').value = val;
+  saveScriptUrl();
+  document.getElementById('configBanner2').style.display = 'none';
+}
+
+renderSingers();
+renderSubmissions();
+loadSingerData();
+loadPartyData();
+</script>
+</body>
+</html>
